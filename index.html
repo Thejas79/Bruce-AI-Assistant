@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bruce</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #0a0a0a;
+      color: #e5e5e5;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Pulse animation ── */
+    @keyframes pulse {
+      0% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.3;
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+
+
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 240px;
+      min-width: 200px;
+      background: #0f0f0f;
+      border-right: 1px solid #1f1f1f;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 12px;
+      gap: 12px;
+    }
+
+    .sidebar-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0 4px 10px;
+      border-bottom: 1px solid #1f1f1f;
+    }
+
+    #new-chat-btn {
+      width: 100%;
+      padding: 10px 14px;
+      background: transparent;
+      color: #ffffff;
+      border: 1px solid #ffffff44;
+      border-radius: 6px;
+      font-size: 13.5px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      letter-spacing: 0.04em;
+      transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    #new-chat-btn:hover {
+      background: #ffffff10;
+      border-color: #ffffff;
+      box-shadow: 0 0 10px #ffffff30;
+    }
+
+    #chatList {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    #chatList div {
+      padding: 9px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #888;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: background 0.15s, color 0.15s;
+      border: 1px solid transparent;
+    }
+
+    #chatList div:hover {
+      background: #ffffff10;
+      color: #ffffff;
+      border-color: #ffffff30;
+    }
+
+    #chatList div.active {
+      background: #ffffff18;
+      color: #ffffff;
+      border-color: #ffffff50;
+    }
+
+    /* ── Main chat area ── */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .chat-header {
+      text-align: center;
+      padding: 18px 0 14px;
+      border-bottom: 1px solid #1a1a1a;
+      background: #0a0a0a;
+    }
+
+    .chat-header .bat-icon {
+      font-size: 22px;
+      display: block;
+      animation: glow 2.5s ease-in-out infinite;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+
+    .chat-header h2 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #ffffff;
+      text-shadow: 0 0 10px #ffffff66;
+    }
+
+    /* ── Chat box ── */
+    .chat-box {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 20px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── Messages ── */
+    .msg {
+      padding: 12px 16px;
+      border-radius: 12px;
+      max-width: 72%;
+      line-height: 1.65;
+      font-size: 14.5px;
+      word-break: break-word;
+    }
+
+    .user {
+      background: #252528;
+      color: #ffffff;
+      border: 1px solid #ffffff40;
+      margin-left: auto;
+      border-bottom-right-radius: 3px;
+      box-shadow: 0 0 12px #ffffff18;
+    }
+
+    .ai {
+      background: #141414;
+      color: #ddd;
+      border: 1px solid #242424;
+      margin-right: auto;
+      border-bottom-left-radius: 3px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    /* ── Loading indicator ── */
+    .thinking {
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      animation: pulse 1s infinite;
+    }
+
+    /* ── Suggestion Footer ── */
+    .suggestions {
+      display: flex;
+      gap: 10px;
+      padding: 0 20px 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fade-in 0.4s ease-out;
+    }
+
+    .suggestion-card {
+      background: #111;
+      border: 1px solid #222;
+      color: #ccc;
+      padding: 8px 14px;
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .suggestion-card span {
+      font-size: 14px;
+    }
+
+    .suggestion-card:hover {
+      border-color: #ffffff;
+      box-shadow: 0 0 14px #ffffff40;
+      transform: translateY(-2px);
+      color: #ffffff;
+      background: #ffffff08;
+    }
+
+    .speak-btn {
+      background: none;
+      border: none;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 16px;
+      transition: 0.2s;
+    }
+
+    .speak-btn:hover {
+      color: #fff;
+      transform: scale(1.1);
+    }
+
+    /* ── Input area ── */
+    .input-area {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px 8px;
+      border-top: 1px solid #1a1a1a;
+      background: #0a0a0a;
+    }
+
+    #msg {
+      flex: 1;
+      padding: 11px 16px;
+      background: #111;
+      color: #e5e5e5;
+      border: 1px solid #222;
+      border-radius: 8px;
+      font-size: 14.5px;
+      font-family: inherit;
+      outline: none;
+      resize: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    #msg:focus {
+      border-color: #ffffff;
+      box-shadow: 0 0 0 2px #ffffff22;
+    }
+
+    #msg::placeholder {
+      color: #444;
+    }
+
+    .icon-btn {
+      background: #111;
+      color: #888;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 10px 13px;
+      font-size: 17px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .icon-btn:hover {
+      background: #ffffff10;
+      color: #ffffff;
+      border-color: #ffffff;
+      box-shadow: 0 0 10px #ffffff30;
+    }
+
+    .send-btn {
+      background: #ffffff;
+      color: #0a0a0a;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover {
+      background: #ffffff;
+      box-shadow: 0 0 14px #ffffff60;
+    }
+
+    /* ── Wayne Enterprises Footer ── */
+    .wayne-footer {
+      text-align: center;
+      padding: 4px 0 12px;
+      font-size: 12px;
+      color: #888;
+      opacity: 0.7;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      cursor: default;
+      user-select: none;
+    }
+
+    .wayne-footer:hover {
+      opacity: 1;
+      color: #ffffff;
+      text-shadow: 0 0 8px #ffffff40;
+    }
+
+    /* ── Custom scrollbar ── */
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #222;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #ffffff40;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .sidebar {
+        width: 54px;
+        min-width: 54px;
+        padding: 12px 6px;
+      }
+
+      .sidebar-title,
+      #chatList div {
+        display: none;
+      }
+
+      #new-chat-btn {
+        padding: 10px;
+        text-align: center;
+        font-size: 18px;
+      }
+
+      .suggestions {
+        padding: 0 10px 8px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-title">🦇 Channels</div>
+      <button id="new-chat-btn" onclick="createChat()">+ New Chat</button>
+      <div id="chatList"></div>
+    </div>
+
+    <!-- Chat area -->
+    <div class="chat-area">
+
+      <div class="chat-header">
+        <span class="bat-icon">🦇</span>
+        <h2>Bruce</h2>
+      </div>
+
+      <div id="chat" class="chat-box"></div>
+
+      <!-- SUGGESTIONS -->
+      <div id="suggestions" class="suggestions">
+        <div class="suggestion-card" onclick="useSuggestion('Explain this code')">
+          <span>🦇</span> Explain this code
+        </div>
+        <div class="suggestion-card" onclick="useSuggestion('Summarize the file')">
+          <span>🦇</span> Summarize the file
+        </div>
+        <div class="suggestion-card" onclick="useSuggestion('Optimize this logic')">
+          <span>🦇</span> Optimize this logic
+        </div>
+        <div class="suggestion-card" onclick="useSuggestion('Debug this issue')">
+          <span>🦇</span> Debug this issue
+        </div>
+      </div>
+
+      <!-- INPUT AREA -->
+      <div class="input-area">
+        <!-- + button -->
+        <button class="icon-btn" onclick="document.getElementById('fileInput').click()">+</button>
+        <!-- hidden file input -->
+        <input type="file" id="fileInput" style="display:none" onchange="uploadFile()" />
+        <!-- chat input -->
+        <input id="msg" placeholder="Message Bruce..." />
+        <!-- send -->
+        <button class="icon-btn" onclick="startListening()">🎤</button>
+        <button class="send-btn" onclick="send()">➤</button>
+      </div>
+
+      <!-- WAYNE FOOTER -->
+      <div class="wayne-footer">
+        Wayne AI Systems
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let activeChatId = "default";
+
+    // 🔊 SPEECH CONTROL
+    let currentSpeech = null;
+    let currentButton = null;
+
+    function toggleSpeak(button, text) {
+      // stop same message
+      if (currentSpeech && currentButton === button) {
+        window.speechSynthesis.cancel();
+        currentSpeech = null;
+        currentButton.innerText = "🔊";
+        currentButton = null;
+        return;
+      }
+
+      // stop previous speech
+      if (currentSpeech) {
+        window.speechSynthesis.cancel();
+        if (currentButton) currentButton.innerText = "🔊";
+      }
+
+      const speech = new SpeechSynthesisUtterance(text);
+      speech.lang = "en-US";
+
+      currentSpeech = speech;
+      currentButton = button;
+
+      speech.onend = () => {
+        currentSpeech = null;
+        if (currentButton) currentButton.innerText = "🔊";
+        currentButton = null;
+      };
+
+      window.speechSynthesis.speak(speech);
+      button.innerText = "🔇";
+    }
+
+    // 🔄 LOAD CHATS
+    async function loadChats() {
+      const res = await fetch("http://localhost:8000/chats");
+      const data = await res.json();
+
+      const list = document.getElementById("chatList");
+      list.innerHTML = "";
+
+      data.chats.forEach(id => {
+        const isActive = id === activeChatId ? 'active' : '';
+        list.innerHTML += `
+      <div class="${isActive}" style="display:flex;justify-content:space-between;align-items:center;">
+        <span onclick="switchChat('${id}')">${id}</span>
+        <span onclick="deleteChat('${id}')" style="cursor:pointer;color:red;">✕</span>
+      </div>
+    `;
+      });
+    }
+
+    // 📜 LOAD HISTORY
+    async function loadHistory() {
+      const res = await fetch("http://localhost:8000/history");
+      const data = await res.json();
+
+      const chat = document.getElementById("chat");
+      chat.innerHTML = "";
+
+      data.history.forEach(msg => {
+        if (msg.startsWith("User:")) {
+          chat.innerHTML += `<div class="msg user">${msg.replace("User: ", "")}</div>`;
+        } else {
+          const text = msg.replace("Bruce: ", "").replace(/`/g, '');
+
+          chat.innerHTML += `
+        <div class="msg ai">
+          <div style="display:flex; justify-content:space-between; gap:10px;">
+            <div style="flex:1;">${text}</div>
+            <button class="speak-btn" onclick="toggleSpeak(this, \`${text}\`)">🔊</button>
+          </div>
+        </div>
+      `;
+        }
+      });
+
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    // 🔁 SWITCH CHAT
+    async function switchChat(id) {
+      activeChatId = id;
+
+      await fetch("http://localhost:8000/switch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: id })
+      });
+
+      loadChats();
+      loadHistory();
+    }
+
+    // ➕ CREATE CHAT
+    async function createChat() {
+      const res = await fetch("http://localhost:8000/new", { method: "POST" });
+      const data = await res.json();
+
+      activeChatId = data.chat_id;
+      loadChats();
+      loadHistory();
+    }
+
+    // ❌ DELETE CHAT
+    async function deleteChat(id) {
+      await fetch("http://localhost:8000/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: id })
+      });
+
+      loadChats();
+      loadHistory();
+    }
+
+    // 📄 FILE UPLOAD (TEXT MODE)
+    async function uploadFile() {
+      const fileInput = document.getElementById("fileInput");
+      const file = fileInput.files[0];
+
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("http://localhost:8000/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+
+      document.getElementById("msg").value =
+        "Analyze this file:\n" + data.content;
+
+      toggleSuggestions();
+    }
+
+    // 🎤 VOICE INPUT
+    function startListening() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+
+      recognition.lang = "en-US";
+      recognition.start();
+
+      recognition.onresult = function (event) {
+        const text = event.results[0][0].transcript;
+        document.getElementById("msg").value = text;
+        toggleSuggestions();
+      };
+
+      recognition.onerror = function () {
+        alert("Voice recognition failed");
+      };
+    }
+
+    // 🚀 SEND MESSAGE
+    async function send() {
+      const input = document.getElementById("msg");
+      const chat = document.getElementById("chat");
+
+      const msg = input.value;
+      if (!msg) return;
+
+      // show user msg
+      chat.innerHTML += `<div class="msg user">${msg}</div>`;
+      input.value = "";
+      toggleSuggestions();
+
+      // thinking bubble
+      const bot = document.createElement("div");
+      bot.className = "msg ai";
+      bot.innerHTML = `<span class="thinking">🦇 Bruce is thinking...</span>`;
+      chat.appendChild(bot);
+
+      chat.scrollTop = chat.scrollHeight;
+
+      await new Promise(r => setTimeout(r, 50));
+
+      try {
+        const res = await fetch("http://localhost:8000/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: msg })
+        });
+
+        const data = await res.json();
+        const safeText = data.response.replace(/`/g, '').replace(/"/g, '&quot;');
+
+        // replace with AI response + speaker
+        bot.innerHTML = `
+      <div style="display:flex; justify-content:space-between; gap:10px;">
+        <div style="flex:1;">${safeText}</div>
+        <button class="speak-btn" onclick="toggleSpeak(this, \`${safeText}\`)">🔊</button>
+      </div>
+    `;
+
+      } catch (err) {
+        bot.innerHTML = "Error connecting to backend";
+      }
+
+      loadChats();
+    }
+
+    // ⌨️ ENTER KEY SUPPORT
+    const msgInput = document.getElementById("msg");
+
+    msgInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+
+    // 💡 SUGGESTIONS TOGGLE
+    function toggleSuggestions() {
+      const suggestions = document.getElementById("suggestions");
+      if (msgInput.value.trim()) {
+        suggestions.style.display = "none";
+      } else {
+        suggestions.style.display = "flex";
+      }
+    }
+
+    // INIT
+    loadChats();
+    loadHistory();
+  </script>
+</body>
+
+</html>
