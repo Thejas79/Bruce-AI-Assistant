@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bruce</title>
+  <title>🦇 Bruce</title>
   <style>
     *,
     *::before,
@@ -467,21 +467,22 @@
     let currentSpeech = null;
     let currentButton = null;
 
+    function stopSpeech() {
+      window.speechSynthesis.cancel();
+      if (currentButton) currentButton.innerText = "🔊";
+      currentSpeech = null;
+      currentButton = null;
+    }
+
     function toggleSpeak(button, text) {
       // stop same message
       if (currentSpeech && currentButton === button) {
-        window.speechSynthesis.cancel();
-        currentSpeech = null;
-        currentButton.innerText = "🔊";
-        currentButton = null;
+        stopSpeech();
         return;
       }
 
-      // stop previous speech
-      if (currentSpeech) {
-        window.speechSynthesis.cancel();
-        if (currentButton) currentButton.innerText = "🔊";
-      }
+      // stop previous
+      stopSpeech();
 
       const speech = new SpeechSynthesisUtterance(text);
       speech.lang = "en-US";
@@ -489,11 +490,7 @@
       currentSpeech = speech;
       currentButton = button;
 
-      speech.onend = () => {
-        currentSpeech = null;
-        if (currentButton) currentButton.innerText = "🔊";
-        currentButton = null;
-      };
+      speech.onend = () => stopSpeech();
 
       window.speechSynthesis.speak(speech);
       button.innerText = "🔇";
@@ -582,7 +579,7 @@
       loadHistory();
     }
 
-    // 📄 FILE UPLOAD (TEXT MODE)
+    // 📄 FILE UPLOAD
     async function uploadFile() {
       const fileInput = document.getElementById("fileInput");
       const file = fileInput.files[0];
@@ -605,8 +602,10 @@
       toggleSuggestions();
     }
 
-    // 🎤 VOICE INPUT
+    // 🎤 VOICE INPUT (IMPROVED)
     function startListening() {
+      stopSpeech(); // 🔥 STOP AI when user talks
+
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 
       recognition.lang = "en-US";
@@ -619,24 +618,24 @@
       };
 
       recognition.onerror = function () {
-        alert("Voice recognition failed");
+        console.log("Voice error");
       };
     }
 
-    // 🚀 SEND MESSAGE
+    // 🚀 SEND
     async function send() {
+      stopSpeech(); // 🔥 STOP any speaking before new response
+
       const input = document.getElementById("msg");
       const chat = document.getElementById("chat");
 
       const msg = input.value;
       if (!msg) return;
 
-      // show user msg
       chat.innerHTML += `<div class="msg user">${msg}</div>`;
       input.value = "";
       toggleSuggestions();
 
-      // thinking bubble
       const bot = document.createElement("div");
       bot.className = "msg ai";
       bot.innerHTML = `<span class="thinking">🦇 Bruce is thinking...</span>`;
@@ -656,7 +655,6 @@
         const data = await res.json();
         const safeText = data.response.replace(/`/g, '').replace(/"/g, '&quot;');
 
-        // replace with AI response + speaker
         bot.innerHTML = `
       <div style="display:flex; justify-content:space-between; gap:10px;">
         <div style="flex:1;">${safeText}</div>
@@ -664,14 +662,14 @@
       </div>
     `;
 
-      } catch (err) {
+      } catch {
         bot.innerHTML = "Error connecting to backend";
       }
 
       loadChats();
     }
 
-    // ⌨️ ENTER KEY SUPPORT
+    // ⌨️ ENTER
     const msgInput = document.getElementById("msg");
 
     msgInput.addEventListener("keydown", function (e) {
@@ -681,7 +679,7 @@
       }
     });
 
-    // 💡 SUGGESTIONS TOGGLE
+    // 💡 SUGGESTIONS
     function toggleSuggestions() {
       const suggestions = document.getElementById("suggestions");
       if (msgInput.value.trim()) {
